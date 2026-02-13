@@ -1,111 +1,26 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Minimal custom styles — Bootstrap handles the rest */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-
-@layer base {
-  :root {
-    --background: 222 47% 6%;
-    --foreground: 210 20% 92%;
-
-    --card: 220 40% 9%;
-    --card-foreground: 210 20% 92%;
-
-    --popover: 220 40% 9%;
-    --popover-foreground: 210 20% 92%;
-
-    --primary: 187 72% 50%;
-    --primary-foreground: 222 47% 6%;
-
-    --secondary: 220 30% 14%;
-    --secondary-foreground: 210 20% 85%;
-
-    --muted: 220 25% 12%;
-    --muted-foreground: 215 15% 55%;
-
-    --accent: 187 72% 50%;
-    --accent-foreground: 222 47% 6%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 20% 98%;
-
-    --border: 220 20% 18%;
-    --input: 220 20% 18%;
-    --ring: 187 72% 50%;
-
-    --radius: 0.375rem;
-
-    --sidebar-background: 220 40% 7%;
-    --sidebar-foreground: 210 20% 80%;
-    --sidebar-primary: 187 72% 50%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 220 30% 12%;
-    --sidebar-accent-foreground: 210 20% 85%;
-    --sidebar-border: 220 20% 15%;
-    --sidebar-ring: 187 72% 50%;
-
-    /* Annotation colors */
-    --anno-red: 0 85% 60%;
-    --anno-green: 142 70% 50%;
-    --anno-blue: 217 90% 60%;
-    --anno-yellow: 45 95% 55%;
-    --anno-magenta: 300 75% 60%;
-    --anno-cyan: 187 72% 50%;
-    --anno-orange: 25 90% 55%;
-    --anno-purple: 270 70% 60%;
-
-    /* Surfaces */
-    --surface-0: 222 47% 6%;
-    --surface-1: 220 40% 9%;
-    --surface-2: 220 30% 12%;
-    --surface-3: 220 25% 16%;
-
-    font-family: 'Inter', system-ui, sans-serif;
-  }
+body {
+  background-color: #1a1a2e;
+  color: #e0e0e0;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground antialiased;
-  }
-
-  .font-mono {
-    font-family: 'JetBrains Mono', monospace;
-  }
+.annotation-canvas {
+  cursor: crosshair;
 }
 
-@layer utilities {
-  .annotation-canvas {
-    cursor: crosshair;
-  }
+.annotation-canvas.grabbing {
+  cursor: grabbing;
+}
 
-  .annotation-canvas.grabbing {
-    cursor: grabbing;
-  }
+.annotation-canvas.grab {
+  cursor: grab;
+}
 
-  .annotation-canvas.grab {
-    cursor: grab;
-  }
+.annotation-canvas.nwse-resize {
+  cursor: nwse-resize;
+}
 
-  .annotation-canvas.nwse-resize {
-    cursor: nwse-resize;
-  }
-
-  .annotation-canvas.nesw-resize {
-    cursor: nesw-resize;
-  }
-
-  .glow-primary {
-    box-shadow: 0 0 20px hsl(187 72% 50% / 0.15);
-  }
-
-  .surface-glass {
-    background: hsl(var(--surface-1) / 0.8);
-    backdrop-filter: blur(12px);
-  }
+.annotation-canvas.nesw-resize {
+  cursor: nesw-resize;
 }

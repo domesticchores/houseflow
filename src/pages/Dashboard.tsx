@@ -1,108 +1,108 @@
 import { useState, useEffect, useCallback } from "react";
-import { LogOut, Box } from "lucide-react";
-import ProjectSidebar from "@/components/annotation/ProjectSidebar";
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Alert,
+  Spinner,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Badge,
+} from "reactstrap";
 import AnnotationCanvas from "@/components/annotation/AnnotationCanvas";
-import ClassSelector from "@/components/annotation/ClassSelector";
-import BoxList from "@/components/annotation/BoxList";
-import ToolBar from "@/components/annotation/ToolBar";
+import ClassSelectorBootstrap from "@/components/annotation/ClassSelectorBootstrap";
+import BoxListBootstrap from "@/components/annotation/BoxListBootstrap";
 import { DEFAULT_CLASSES } from "@/types/annotation";
-import type { ProjectImage, BoundingBox } from "@/types/annotation";
-import { exportYolo } from "@/utils/yoloExport";
+import type { BoundingBox } from "@/types/annotation";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  assignRandomImage,
+  submitImage,
+  trashImage,
+  seedPool,
+  getPoolStats,
+  type ImagePoolEntry,
+} from "@/services/imageService";
+import { getUserTotalCount } from "@/services/statsService";
 
-interface DashboardProps {
-  username: string;
-  onLogout: () => void;
-}
+// Demo seed images — replace these URLs with your actual image folder/API
+const DEMO_IMAGES = [
+  { url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", filename: "landscape_01.jpg" },
+  { url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800", filename: "portrait_01.jpg" },
+  { url: "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=800", filename: "dog_01.jpg" },
+  { url: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=800", filename: "cat_01.jpg" },
+  { url: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800", filename: "city_01.jpg" },
+];
 
-const STORAGE_KEY = "annotate_ai_data";
-
-const Dashboard = ({ username, onLogout }: DashboardProps) => {
-  const [images, setImages] = useState<ProjectImage[]>([]);
-  const [activeImageId, setActiveImageId] = useState<string | null>(null);
+const Dashboard = () => {
+  const { user } = useAuth();
+  const [currentImage, setCurrentImage] = useState<ImagePoolEntry | null>(null);
+  const [boxes, setBoxes] = useState<BoundingBox[]>([]);
   const [activeClassId, setActiveClassId] = useState(0);
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
+  const [noImages, setNoImages] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [trashModalOpen, setTrashModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const activeImage = images.find((img) => img.id === activeImageId) || null;
-
-  // Load from localStorage
+  // Seed demo images on first load
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const data = JSON.parse(saved) as ProjectImage[];
-        setImages(data);
-        if (data.length > 0) setActiveImageId(data[0].id);
-      }
-    } catch {}
+    seedPool(DEMO_IMAGES);
   }, []);
 
-  // Save to localStorage
+  // Assign an image to the user
+  const loadNextImage = useCallback(() => {
+    if (!user) return;
+    const img = assignRandomImage(user.uuid);
+    if (img) {
+      setCurrentImage(img);
+      setBoxes([]);
+      setSelectedBoxId(null);
+      setNoImages(false);
+    } else {
+      setCurrentImage(null);
+      setNoImages(true);
+    }
+    setTotalCount(getUserTotalCount(user.uuid));
+  }, [user]);
+
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
-    } catch {}
-  }, [images]);
+    loadNextImage();
+  }, [loadNextImage]);
 
-  const handleUploadImages = useCallback((files: FileList) => {
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newImage: ProjectImage = {
-          id: crypto.randomUUID(),
-          name: file.name,
-          dataUrl: e.target?.result as string,
-          boxes: [],
-        };
-        setImages((prev) => {
-          const updated = [...prev, newImage];
-          if (prev.length === 0) setActiveImageId(newImage.id);
-          return updated;
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-  }, []);
+  // Submit annotations
+  const handleSubmit = useCallback(() => {
+    if (!user || !currentImage) return;
+    setSubmitting(true);
+    submitImage(currentImage.id, user.uuid, boxes);
+    setTimeout(() => {
+      setSubmitting(false);
+      loadNextImage();
+    }, 300);
+  }, [user, currentImage, boxes, loadNextImage]);
 
-  const handleDeleteImage = useCallback((id: string) => {
-    setImages((prev) => {
-      const updated = prev.filter((img) => img.id !== id);
-      if (id === activeImageId) {
-        setActiveImageId(updated.length > 0 ? updated[0].id : null);
-      }
-      return updated;
-    });
-    setSelectedBoxId(null);
-  }, [activeImageId]);
-
-  const handleBoxesChange = useCallback((newBoxes: BoundingBox[]) => {
-    setImages((prev) =>
-      prev.map((img) => (img.id === activeImageId ? { ...img, boxes: newBoxes } : img))
-    );
-  }, [activeImageId]);
-
-  const handleDeleteSelected = useCallback(() => {
-    if (!selectedBoxId || !activeImage) return;
-    handleBoxesChange(activeImage.boxes.filter((b) => b.id !== selectedBoxId));
-    setSelectedBoxId(null);
-  }, [selectedBoxId, activeImage, handleBoxesChange]);
+  // Trash image
+  const handleTrash = useCallback(() => {
+    if (!user || !currentImage) return;
+    trashImage(currentImage.id, user.uuid);
+    setTrashModalOpen(false);
+    loadNextImage();
+  }, [user, currentImage, loadNextImage]);
 
   const handleDeleteBox = useCallback((id: string) => {
-    if (!activeImage) return;
-    handleBoxesChange(activeImage.boxes.filter((b) => b.id !== id));
+    setBoxes((prev) => prev.filter((b) => b.id !== id));
     if (selectedBoxId === id) setSelectedBoxId(null);
-  }, [activeImage, handleBoxesChange, selectedBoxId]);
+  }, [selectedBoxId]);
 
-  const handleChangeBoxClass = useCallback((boxId: string, classId: number) => {
-    if (!activeImage) return;
-    handleBoxesChange(activeImage.boxes.map((b) => (b.id === boxId ? { ...b, classId } : b)));
-  }, [activeImage, handleBoxesChange]);
+  const handleDeleteSelected = useCallback(() => {
+    if (!selectedBoxId) return;
+    handleDeleteBox(selectedBoxId);
+  }, [selectedBoxId, handleDeleteBox]);
 
-  const handleExport = useCallback(() => {
-    if (images.length === 0) return;
-    exportYolo(images, DEFAULT_CLASSES);
-  }, [images]);
-
-  // Keyboard shortcuts
+  // Keyboard shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Delete" || e.key === "Backspace") {
@@ -113,86 +113,110 @@ const Dashboard = ({ username, onLogout }: DashboardProps) => {
     return () => window.removeEventListener("keydown", handler);
   }, [handleDeleteSelected]);
 
-  return (
-    <div className="flex h-screen flex-col bg-background">
-      {/* Top bar */}
-      <header className="flex items-center justify-between border-b border-border bg-card px-4 py-2">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded bg-primary/10">
-            <Box className="h-4 w-4 text-primary" />
-          </div>
-          <span className="text-sm font-semibold text-foreground">AnnotateAI</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground font-mono">{username}</span>
-          <button
-            onClick={onLogout}
-            className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors"
-            title="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
+  const stats = getPoolStats();
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar */}
-        <div className="flex flex-col">
-          <ProjectSidebar
-            images={images}
-            activeImageId={activeImageId}
-            onSelectImage={(id) => { setActiveImageId(id); setSelectedBoxId(null); }}
-            onUploadImages={handleUploadImages}
-            onDeleteImage={handleDeleteImage}
+  if (!user) return null;
+
+  return (
+    <Container fluid className="py-3">
+      <Row>
+        {/* Sidebar */}
+        <Col md={3} lg={2}>
+          <div className="mb-3">
+            <small className="text-muted">Your total: </small>
+            <Badge color="info">{totalCount}</Badge>
+          </div>
+          <div className="mb-3">
+            <small className="text-muted d-block">Pool: {stats.available} available</small>
+          </div>
+
+          <ClassSelectorBootstrap
+            classes={DEFAULT_CLASSES}
+            activeClassId={activeClassId}
+            onSelectClass={setActiveClassId}
           />
-          <ClassSelector classes={DEFAULT_CLASSES} activeClassId={activeClassId} onSelectClass={setActiveClassId} />
-          {activeImage && (
-            <BoxList
-              boxes={activeImage.boxes}
+
+          {currentImage && (
+            <BoxListBootstrap
+              boxes={boxes}
               classes={DEFAULT_CLASSES}
               selectedBoxId={selectedBoxId}
               onSelectBox={setSelectedBoxId}
               onDeleteBox={handleDeleteBox}
-              onChangeBoxClass={handleChangeBoxClass}
             />
           )}
-        </div>
 
-        {/* Main workspace */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <ToolBar
-            selectedBoxId={selectedBoxId}
-            onDeleteSelected={handleDeleteSelected}
-            onExport={handleExport}
-            imageLoaded={!!activeImage}
-          />
-          {activeImage ? (
-            <AnnotationCanvas
-              imageSrc={activeImage.dataUrl}
-              boxes={activeImage.boxes}
-              activeClassId={activeClassId}
-              classes={DEFAULT_CLASSES}
-              selectedBoxId={selectedBoxId}
-              onBoxesChange={handleBoxesChange}
-              onSelectBox={setSelectedBoxId}
-            />
-          ) : (
-            <div className="flex flex-1 items-center justify-center bg-surface-0">
-              <div className="text-center animate-fade-in">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl border border-dashed border-border">
-                  <Box className="h-8 w-8 text-muted-foreground/40" />
-                </div>
-                <p className="text-sm text-muted-foreground">Upload images to start annotating</p>
-                <label className="mt-3 inline-block cursor-pointer rounded-md bg-primary/10 px-4 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-                  Choose Files
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && handleUploadImages(e.target.files)} />
-                </label>
-              </div>
+          {currentImage && (
+            <div className="mt-3 d-grid gap-2">
+              <Button
+                color="success"
+                onClick={handleSubmit}
+                disabled={submitting || boxes.length === 0}
+              >
+                {submitting ? <Spinner size="sm" /> : "Submit Annotations"}
+              </Button>
+              <Button
+                color="danger"
+                outline
+                onClick={() => setTrashModalOpen(true)}
+              >
+                Trash (Blurry)
+              </Button>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+        </Col>
+
+        {/* Canvas */}
+        <Col md={9} lg={10}>
+          {noImages ? (
+            <Alert color="info">
+              No images available in the pool. All images have been annotated or trashed.
+            </Alert>
+          ) : currentImage ? (
+            <div style={{ height: "calc(100vh - 120px)" }}>
+              <div className="mb-1">
+                <small className="text-muted font-monospace">{currentImage.filename}</small>
+              </div>
+              <AnnotationCanvas
+                imageSrc={currentImage.url}
+                boxes={boxes}
+                activeClassId={activeClassId}
+                classes={DEFAULT_CLASSES}
+                selectedBoxId={selectedBoxId}
+                onBoxesChange={setBoxes}
+                onSelectBox={setSelectedBoxId}
+              />
+            </div>
+          ) : (
+            <div className="text-center py-5">
+              <Spinner />
+              <p className="text-muted mt-2">Loading image...</p>
+            </div>
+          )}
+        </Col>
+      </Row>
+
+      {/* Trash confirmation modal */}
+      <Modal isOpen={trashModalOpen} toggle={() => setTrashModalOpen(false)}>
+        <ModalHeader toggle={() => setTrashModalOpen(false)}>
+          Trash Image
+        </ModalHeader>
+        <ModalBody>
+          <Alert color="warning" className="mb-0">
+            <strong>Warning:</strong> This will permanently remove this image from the annotation pool.
+            Only trash images that are too blurry or unusable. This action cannot be undone.
+          </Alert>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onClick={() => setTrashModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button color="danger" onClick={handleTrash}>
+            Confirm Trash
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </Container>
   );
 };
 
