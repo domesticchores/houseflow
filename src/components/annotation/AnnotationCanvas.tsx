@@ -323,7 +323,7 @@ const AnnotationCanvas = ({
   };
 
   return (
-    <div ref={containerRef} className="relative flex-1 overflow-hidden bg-surface-0">
+    <div ref={containerRef} style={{ position: "relative", flex: 1, overflow: "hidden", backgroundColor: "#111" }}>
       <canvas
         ref={canvasRef}
         width={canvasSize.w}
