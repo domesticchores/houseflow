@@ -5,6 +5,7 @@ import AppNavbar from "@/components/AppNavbar";
 import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
+import Home from "./pages/Home";
 
 const App = () => (
   <AuthProvider>

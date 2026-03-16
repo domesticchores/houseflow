@@ -52,22 +52,40 @@ const AnnotationCanvas = ({
     img.src = imageSrc;
   }, [imageSrc]);
 
-  const fitImage = useCallback(() => {
-    const container = containerRef.current;
-    const img = imgRef.current;
-    if (!container || !img) return;
+const fitImage = useCallback(() => {
+  const container = containerRef.current;
+  const img = imgRef.current;
+  if (!container || !img) return;
 
-    const cw = container.clientWidth;
-    const ch = container.clientHeight;
-    setCanvasSize({ w: cw, h: ch });
+  const cw = 1000;
+  const ch = 600;
 
-    const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight, 1);
-    const iw = img.naturalWidth * scale;
-    const ih = img.naturalHeight * scale;
-    const ix = (cw - iw) / 2;
-    const iy = (ch - ih) / 2;
-    setImgRect({ x: ix, y: iy, w: iw, h: ih });
-  }, []);
+  console.log(cw,ch)
+
+  setCanvasSize((prev) => {
+    if (prev.w === cw && prev.h === ch) return prev;
+    return { w: cw, h: ch };
+  });
+
+  const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight, 1);
+  const iw = img.naturalWidth * scale;
+  const ih = img.naturalHeight * scale;
+  const ix = (cw - iw) / 2;
+  const iy = (ch - ih) / 2;
+
+  setImgRect((prev) => {
+    if (
+      prev.x === ix &&
+      prev.y === iy &&
+      prev.w === iw &&
+      prev.h === ih
+    ) {
+      return prev;
+    }
+
+    return { x: ix, y: iy, w: iw, h: ih };
+  });
+}, []);
 
   useEffect(() => {
     const obs = new ResizeObserver(() => fitImage());
@@ -323,7 +341,7 @@ const AnnotationCanvas = ({
   };
 
   return (
-    <div ref={containerRef} style={{ position: "relative", flex: 1, overflow: "hidden", backgroundColor: "#111" }}>
+    <div ref={containerRef} style={{ position: "relative", flex: 1, overflow: "hidden" }}>
       <canvas
         ref={canvasRef}
         width={canvasSize.w}

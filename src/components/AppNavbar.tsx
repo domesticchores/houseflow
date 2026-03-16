@@ -10,6 +10,7 @@ import {
 } from "reactstrap";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import Profile from "./Profile";
 
 const AppNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,9 +18,9 @@ const AppNavbar = () => {
   const location = useLocation();
 
   return (
-    <Navbar dark color="dark" expand="md" className="px-3">
+    <Navbar color="primary" dark expand="lg">
       <NavbarBrand tag={Link} to="/">
-        AnnotateAI
+        Bits 'n Bytes Imager
       </NavbarBrand>
       <NavbarToggler onClick={() => setIsOpen(!isOpen)} />
       <Collapse isOpen={isOpen} navbar>
@@ -43,11 +44,12 @@ const AppNavbar = () => {
             </NavLink>
           </NavItem>
         </Nav>
-        {user && (
+        {/* {user && (
           <span className="navbar-text font-monospace small">
             {user.username}
           </span>
-        )}
+        )} */}
+        <Profile/>
       </Collapse>
     </Navbar>
   );

@@ -160,7 +160,7 @@ const Dashboard = () => {
                 outline
                 onClick={() => setTrashModalOpen(true)}
               >
-                Trash (Blurry)
+                Remove Image
               </Button>
             </div>
           )}
