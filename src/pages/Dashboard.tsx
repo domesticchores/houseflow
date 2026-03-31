@@ -77,7 +77,7 @@ const Dashboard = () => {
   const handleSubmit = useCallback(() => {
     if (!user || !currentImage) return;
     setSubmitting(true);
-    submitImage(currentImage.id, user.uuid, boxes);
+    submitImage(currentImage.id, user.username, boxes);
     setTimeout(() => {
       setSubmitting(false);
       loadNextImage();
@@ -87,7 +87,7 @@ const Dashboard = () => {
   // Trash image
   const handleTrash = useCallback(() => {
     if (!user || !currentImage) return;
-    trashImage(currentImage.id, user.uuid);
+    trashImage(currentImage.id, user.username);
     setTrashModalOpen(false);
     loadNextImage();
   }, [user, currentImage, loadNextImage]);
@@ -118,16 +118,17 @@ const Dashboard = () => {
   if (!user) return null;
 
   return (
-    <Container fluid className="py-3">
+    <Container fluid className="pb-3">
       <Row>
         {/* Sidebar */}
         <Col md={3} lg={2}>
-          <div className="mb-3">
+          <div className="my-3">
             <small className="text-muted">Your total: </small>
-            <Badge color="info">{totalCount}</Badge>
+            <Badge color="primary">{totalCount}</Badge>
           </div>
-          <div className="mb-3">
-            <small className="text-muted d-block">Pool: {stats.available} available</small>
+          <div className="my-3">
+            <small className="text-muted">Available: </small>
+            <Badge color="primary">{totalCount}</Badge>
           </div>
 
           <ClassSelectorBootstrap
@@ -169,7 +170,7 @@ const Dashboard = () => {
         {/* Canvas */}
         <Col md={9} lg={10}>
           {noImages ? (
-            <Alert color="info">
+            <Alert color="primary">
               No images available in the pool. All images have been annotated or trashed.
             </Alert>
           ) : currentImage ? (

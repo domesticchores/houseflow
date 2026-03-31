@@ -42,11 +42,11 @@ export const NoSSOUserInfo: UserInfo = {
   given_name: "Foo",
   family_name: "Bar",
   email: "baz@csh.rit.edu",
-  uuid: "",
+  uuid: "xxxxxxxx-xxxx-4xxx-axxx-xxxxxxxxxxxx",
 };
 
 export const NoSSOProfilePicture =
-  "https://cdn.discordapp.com/attachments/719366780606480384/1035722437049982986/csh.png";
+  "https://assets.csh.rit.edu/pubsite/csh_logo_square.svg";
 
 export const getUseOidcHook = () => {
   return SSOEnabled ? useOidc : useOidcNoSSO;

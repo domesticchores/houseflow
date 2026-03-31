@@ -1,4 +1,12 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import UserInfo from "../UserInfo";
+import {SSOEnabled} from "../configuration";
+import {
+  getUseOidcAccessToken,
+  getUseOidcHook,
+  NoSSOProfilePicture,
+  NoSSOUserInfo,
+} from "../SSODisabledDefaults";
 
 export interface AuthUser {
   uuid: string;
@@ -28,25 +36,16 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const {accessTokenPayload} = getUseOidcAccessToken()();
+  const userInfo = SSOEnabled
+    ? (accessTokenPayload as UserInfo)
+    : NoSSOUserInfo;
 
   useEffect(() => {
-    // STUB: Replace with OIDC session check
-    // e.g. oidcProvider.getUser().then(u => setUser({ uuid: u.sub, username: u.preferred_username }))
     try {
-      const saved = localStorage.getItem("annotate_auth_user");
-      if (saved) {
-        setUser(JSON.parse(saved));
-      } else {
-        // Auto-create a demo user for development
-        const demo: AuthUser = {
-          uuid: crypto.randomUUID(),
-          username: "demo_user",
-        };
-        localStorage.setItem("annotate_auth_user", JSON.stringify(demo));
-        setUser(demo);
-      }
-    } catch {
-      // ignore
+      setUser({username: userInfo.preferred_username, uuid:userInfo.uuid})
+    } catch (error) {
+      console.warn("error in loading user info", error)
     }
     setLoading(false);
   }, []);

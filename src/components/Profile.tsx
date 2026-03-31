@@ -24,7 +24,7 @@ const Profile: React.FunctionComponent = () => {
 
   return (
     <UncontrolledDropdown nav inNavbar>
-      <DropdownToggle nav caret className="navbar-user navbar-text font-monospace small">
+      <DropdownToggle nav caret className="navbar-user navbar-text font-monospace">
         <img
           className="rounded-circle"
           src={

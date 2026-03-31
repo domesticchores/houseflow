@@ -28,7 +28,7 @@ const AnnotationCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ w: 800, h: 600 });
+  const [canvasSize, setCanvasSize] = useState({ w: 1000, h: 600 });
   const [imgRect, setImgRect] = useState({ x: 0, y: 0, w: 0, h: 0 });
 
   const modeRef = useRef<InteractionMode>("idle");
@@ -59,8 +59,6 @@ const fitImage = useCallback(() => {
 
   const cw = 1000;
   const ch = 600;
-
-  console.log(cw,ch)
 
   setCanvasSize((prev) => {
     if (prev.w === cw && prev.h === ch) return prev;
@@ -114,7 +112,7 @@ const fitImage = useCallback(() => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Darkened background
-    ctx.fillStyle = "hsl(222, 47%, 4%)";
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Image
