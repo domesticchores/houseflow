@@ -30,11 +30,7 @@ import { getUserTotalCount } from "@/services/statsService";
 
 // Demo seed images — replace these URLs with your actual image folder/API
 const DEMO_IMAGES = [
-  { url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", filename: "landscape_01.jpg" },
-  { url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800", filename: "portrait_01.jpg" },
-  { url: "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=800", filename: "dog_01.jpg" },
-  { url: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=800", filename: "cat_01.jpg" },
-  { url: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800", filename: "city_01.jpg" },
+  { url: "https://assets.csh.rit.edu/bnb-email/01-28-00-26-04-2025.jpg", filename: "01-28-00-26-04-2025.jpg" }
 ];
 
 const Dashboard = () => {
@@ -77,7 +73,7 @@ const Dashboard = () => {
   const handleSubmit = useCallback(() => {
     if (!user || !currentImage) return;
     setSubmitting(true);
-    submitImage(currentImage.id, user.username, boxes);
+    submitImage(currentImage.id, user.uuid, boxes);
     setTimeout(() => {
       setSubmitting(false);
       loadNextImage();
@@ -170,8 +166,8 @@ const Dashboard = () => {
         {/* Canvas */}
         <Col md={9} lg={10}>
           {noImages ? (
-            <Alert color="primary">
-              No images available in the pool. All images have been annotated or trashed.
+            <Alert color="primary" className="mt-2">
+              No images available in the pool. Wow, you've done it!
             </Alert>
           ) : currentImage ? (
             <div style={{ height: "calc(100vh - 120px)" }}>
