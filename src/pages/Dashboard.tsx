@@ -27,6 +27,7 @@ import {
   getRandomTask,
 } from "@/services/imageService";
 import { getUserTotalCount } from "@/services/statsService";
+import swal from 'sweetalert';
 
 // Demo seed images — replace these URLs with your actual image folder/API
 const DEMO_IMAGES = [
@@ -90,6 +91,12 @@ const Dashboard = () => {
     if (!user || !currentImage) return;
     setSubmitting(true);
     submitImage(currentImage.id, user.uuid, boxes);
+    // add modal when submitted!
+    swal({
+      title:"Submitted!",
+      text:"Thanks for helping out :)",
+      icon:"success"
+    });
     setTimeout(() => {
       setSubmitting(false);
       loadNextImage();
@@ -190,7 +197,7 @@ const Dashboard = () => {
               <div className="mb-1">
                 <small className="text-muted font-monospace">{currentImage.filename}</small>
               </div>
-              <AnnotationCanvas
+              {!submitting && <AnnotationCanvas
                 imageSrc={currentImage.url}
                 boxes={boxes}
                 activeClassId={activeClassId}
@@ -198,7 +205,7 @@ const Dashboard = () => {
                 selectedBoxId={selectedBoxId}
                 onBoxesChange={setBoxes}
                 onSelectBox={setSelectedBoxId}
-              />
+              />}
             </div>
           ) : (
             <div className="text-center py-5">

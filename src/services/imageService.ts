@@ -173,6 +173,6 @@ export const submitAnnotations = async (annotations: any[]) => {
 };
 
 export const getRandomTask = async (uuid: string) => {
-  const res = await api.get('/imager/get-task');
+  const res = await api.get('/imager/get-task?uuid='+uuid);
     return res.data;
 };
