@@ -5,6 +5,7 @@ import AppNavbar from "@/components/AppNavbar";
 import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
+import "csh-material-bootstrap/dist/csh-material-bootstrap.css";
 
 const App = () => (
   <AuthProvider>

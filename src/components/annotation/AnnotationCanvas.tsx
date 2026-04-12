@@ -28,7 +28,7 @@ const AnnotationCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ w: 800, h: 600 });
+  const [canvasSize, setCanvasSize] = useState({ w: 1000, h: 600 });
   const [imgRect, setImgRect] = useState({ x: 0, y: 0, w: 0, h: 0 });
 
   const modeRef = useRef<InteractionMode>("idle");
@@ -52,22 +52,38 @@ const AnnotationCanvas = ({
     img.src = imageSrc;
   }, [imageSrc]);
 
-  const fitImage = useCallback(() => {
-    const container = containerRef.current;
-    const img = imgRef.current;
-    if (!container || !img) return;
+const fitImage = useCallback(() => {
+  const container = containerRef.current;
+  const img = imgRef.current;
+  if (!container || !img) return;
 
-    const cw = container.clientWidth;
-    const ch = container.clientHeight;
-    setCanvasSize({ w: cw, h: ch });
+  const cw = 1000;
+  const ch = 600;
 
-    const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight, 1);
-    const iw = img.naturalWidth * scale;
-    const ih = img.naturalHeight * scale;
-    const ix = (cw - iw) / 2;
-    const iy = (ch - ih) / 2;
-    setImgRect({ x: ix, y: iy, w: iw, h: ih });
-  }, []);
+  setCanvasSize((prev) => {
+    if (prev.w === cw && prev.h === ch) return prev;
+    return { w: cw, h: ch };
+  });
+
+  const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight, 1);
+  const iw = img.naturalWidth * scale;
+  const ih = img.naturalHeight * scale;
+  const ix = (cw - iw) / 2;
+  const iy = (ch - ih) / 2;
+
+  setImgRect((prev) => {
+    if (
+      prev.x === ix &&
+      prev.y === iy &&
+      prev.w === iw &&
+      prev.h === ih
+    ) {
+      return prev;
+    }
+
+    return { x: ix, y: iy, w: iw, h: ih };
+  });
+}, []);
 
   useEffect(() => {
     const obs = new ResizeObserver(() => fitImage());
@@ -81,10 +97,15 @@ const AnnotationCanvas = ({
     y: imgRect.y + ny * imgRect.h,
   }), [imgRect]);
 
-  const canvasToNorm = useCallback((cx: number, cy: number) => ({
-    nx: imgRect.w > 0 ? (cx - imgRect.x) / imgRect.w : 0,
-    ny: imgRect.h > 0 ? (cy - imgRect.y) / imgRect.h : 0,
-  }), [imgRect]);
+  const canvasToNorm = useCallback((cx: number, cy: number) => {
+    const nx = imgRect.w > 0 ? (cx - imgRect.x) / imgRect.w : 0;
+    const ny = imgRect.h > 0 ? (cy - imgRect.y) / imgRect.h : 0;
+    // Strictly constrain to image space
+    return {
+      nx: Math.max(0, Math.min(nx, 1)),
+      ny: Math.max(0, Math.min(ny, 1)),
+    };
+  }, [imgRect]);
 
   // Draw
   const draw = useCallback(() => {
@@ -96,7 +117,7 @@ const AnnotationCanvas = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Darkened background
-    ctx.fillStyle = "hsl(222, 47%, 4%)";
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Image
@@ -253,11 +274,21 @@ const AnnotationCanvas = ({
     if (modeRef.current === "moving" && movingBoxRef.current) {
       const dx = (pos.x - movingBoxRef.current.mouseStartX) / imgRect.w;
       const dy = (pos.y - movingBoxRef.current.mouseStartY) / imgRect.h;
-      const updated = boxes.map((b) =>
-        b.id === movingBoxRef.current!.boxId
-          ? { ...b, x: movingBoxRef.current!.startNx + dx, y: movingBoxRef.current!.startNy + dy }
-          : b
-      );
+      
+      const updated = boxes.map((b) => {
+        if (b.id !== movingBoxRef.current!.boxId) return b;
+        
+        // Calculate new position
+        let newX = movingBoxRef.current!.startNx + dx;
+        let newY = movingBoxRef.current!.startNy + dy;
+
+        // CLAMP: Prevent box from leaving the image boundaries
+        newX = Math.max(0, Math.min(newX, 1 - b.width));
+        newY = Math.max(0, Math.min(newY, 1 - b.height));
+
+        return { ...b, x: newX, y: newY };
+      });
+      
       onBoxesChange(updated);
       return;
     }
@@ -276,6 +307,10 @@ const AnnotationCanvas = ({
 
       if (newW < 0.005) newW = 0.005;
       if (newH < 0.005) newH = 0.005;
+
+      // stop negatives
+      newX = Math.max(0, Math.min(newX, 1 - newW));
+      newY = Math.max(0, Math.min(newY, 1 - newH));
 
       const updated = boxes.map((b) => b.id === boxId ? { ...b, x: newX, y: newY, width: newW, height: newH } : b);
       onBoxesChange(updated);
@@ -297,17 +332,22 @@ const AnnotationCanvas = ({
     if (modeRef.current === "drawing") {
       const start = drawStartRef.current;
       const end = getCanvasPos(e);
+      // Inside handleMouseUp...
       const s = canvasToNorm(Math.min(start.x, end.x), Math.min(start.y, end.y));
       const eN = canvasToNorm(Math.max(start.x, end.x), Math.max(start.y, end.y));
-      const w = eN.nx - s.nx;
-      const h = eN.ny - s.ny;
+
+      // CLAMP values to 0.0 - 1.0 range
+      const x = Math.max(0, Math.min(s.nx, 1));
+      const y = Math.max(0, Math.min(s.ny, 1));
+      const w = Math.max(0, Math.min(eN.nx - x, 1 - x));
+      const h = Math.max(0, Math.min(eN.ny - y, 1 - y));
 
       if (w > 0.005 && h > 0.005) {
         const newBox: BoundingBox = {
           id: crypto.randomUUID(),
           classId: activeClassId,
-          x: s.nx,
-          y: s.ny,
+          x: x,
+          y: y,
           width: w,
           height: h,
         };
@@ -323,7 +363,7 @@ const AnnotationCanvas = ({
   };
 
   return (
-    <div ref={containerRef} style={{ position: "relative", flex: 1, overflow: "hidden", backgroundColor: "#111" }}>
+    <div ref={containerRef} style={{ position: "relative", flex: 1, overflow: "hidden" }}>
       <canvas
         ref={canvasRef}
         width={canvasSize.w}
