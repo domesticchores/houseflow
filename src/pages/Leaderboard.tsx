@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Container, Table, Badge } from "reactstrap";
 import { getWeeklyLeaderboard, type LeaderboardEntry } from "@/services/statsService";
 
@@ -38,9 +38,18 @@ const Leaderboard = () => {
 
   const day = new Date().getUTCDay()
 
-  useEffect(() => {
-    setEntries(getWeeklyLeaderboard());
-  }, []);
+  const getEntries = useCallback(async () => {
+    const data = await getWeeklyLeaderboard();
+    setEntries(data);
+  },[])
+
+   useEffect(() => {
+    let isMounted = true;
+    if (isMounted) {
+      getEntries();
+    }
+    return () => { isMounted = false; };
+  }, [getEntries]);
 
   return (
     <Container className="py-4">

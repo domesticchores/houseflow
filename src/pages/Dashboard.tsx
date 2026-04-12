@@ -77,20 +77,26 @@ const Dashboard = () => {
   }, [loadNextImage]);
 
   // Submit annotations
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!user || !currentImage) return;
     setSubmitting(true);
     submitImage(currentImage.id, user.uuid, boxes);
     // add modal when submitted!
-    swal({
-      title:"Submitted!",
-      text:"Thanks for helping out :)",
-      icon:"success"
-    });
-    setTimeout(() => {
+    try {
+      await submitImage(currentImage.id, user.uuid, boxes);
+      await swal({
+        title: "Submitted!",
+        text: "Thanks for helping out :)",
+        icon: "success"
+      });
+      await loadNextImage();
+
+    } catch (error) {
+      console.error("Submission failed:", error);
+      swal("Error", "Could not save annotations. If this persists contact @ak.", "error");
+    } finally {
       setSubmitting(false);
-      loadNextImage();
-    }, 300);
+    }
   }, [user, currentImage, boxes, loadNextImage]);
 
   // Trash image

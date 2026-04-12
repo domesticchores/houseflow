@@ -7,13 +7,13 @@ Imager for the Bits 'n Bytes Project from Computer Science House.
 Build the container
 
 ``` sh
-docker build -t csh-react-boilerplate .
+docker build -t bnb-imager .
 ```
 
 Run the container
 
 ``` sh
-docker run -p 8080:8080 csh-react-boilerplate:latest
+docker run -p 8080:8080 bnb-imager
 ```
 
 ## Environment

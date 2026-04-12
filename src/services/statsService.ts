@@ -23,6 +23,7 @@
  *   ORDER BY count DESC;
  */
 
+import api from "./api";
 import { getSubmissions } from "./imageService";
 
 export interface LeaderboardEntry {
@@ -48,25 +49,21 @@ function getWeekStart(): Date {
  * Get weekly leaderboard from submissions.
  * In production, this is a single SQL query (see above).
  */
-export function getWeeklyLeaderboard(usernames: Record<string, string> = {}): LeaderboardEntry[] {
-  const weekStart = getWeekStart();
-  const submissions = getSubmissions();
-
-  const counts: Record<string, number> = {};
-  for (const sub of submissions) {
-    const subDate = new Date(sub.submittedAt);
-    if (subDate >= weekStart) {
-      counts[sub.userId] = (counts[sub.userId] || 0) + 1;
-    }
+export const getWeeklyLeaderboard = async (usernames: Record<string, string> = {}): Promise<LeaderboardEntry[]> => {
+  try {
+    const res = await api.get('/imager/leaderboard');
+    const data: { userId: string; submissions: number }[] = res.data;
+    return data.map((entry) => ({
+      userId: entry.userId,
+      username: usernames[entry.userId] || entry.userId.slice(0, 8),
+      count: entry.submissions,
+    }));
+    
+    
+  } catch (error) {
+    console.error("Failed to fetch leaderboard:", error);
+    return [];
   }
-
-  return Object.entries(counts)
-    .map(([userId, count]) => ({
-      userId,
-      username: usernames[userId] || userId.slice(0, 8),
-      count,
-    }))
-    .sort((a, b) => b.count - a.count);
 }
 
 /**
