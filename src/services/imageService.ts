@@ -11,6 +11,8 @@
  */
 
 import type { BoundingBox } from "@/types/annotation";
+import axios from 'axios';
+import api from "./api";
 
 export interface ImagePoolEntry {
   id: string;
@@ -70,46 +72,58 @@ export function seedPool(images: { url: string; filename: string }[]) {
  * Get a random available image and assign it to a user.
  * Returns null if no images are available.
  */
-export function assignRandomImage(userId: string): ImagePoolEntry | null {
-  const pool = getPool();
+// export function assignRandomImage(userId: string): ImagePoolEntry | null {
+//   const pool = getPool();
 
-  // Check if user already has an assigned image
-  const alreadyAssigned = pool.find(
-    (img) => img.assignedTo === userId && img.status === "assigned"
-  );
-  if (alreadyAssigned) return alreadyAssigned;
+//   // Check if user already has an assigned image
+//   const alreadyAssigned = pool.find(
+//     (img) => img.assignedTo === userId && img.status === "assigned"
+//   );
+//   if (alreadyAssigned) return alreadyAssigned;
 
-  // Pick random from available
-  const available = pool.filter((img) => img.status === "available");
-  if (available.length === 0) return null;
+//   // Pick random from available
+//   const available = pool.filter((img) => img.status === "available");
+//   if (available.length === 0) return null;
 
-  const picked = available[Math.floor(Math.random() * available.length)];
-  picked.assignedTo = userId;
-  picked.status = "assigned";
-  savePool(pool);
-  return picked;
-}
+//   const picked = available[Math.floor(Math.random() * available.length)];
+//   picked.assignedTo = userId;
+//   picked.status = "assigned";
+//   savePool(pool);
+//   return picked;
+// }
 
 /**
  * Submit annotations for an image.
  */
 export function submitImage(imageId: string, userId: string, boxes: BoundingBox[]) {
-  const pool = getPool();
-  const img = pool.find((i) => i.id === imageId);
-  if (img) {
-    img.status = "submitted";
-    savePool(pool);
-  }
+  // const pool = getPool();
+  // const img = pool.find((i) => i.id === imageId);
+  // if (img) {
+  //   img.status = "submitted";
+  //   savePool(pool);
+  // }
 
   // Save submission
-  const submissions = getSubmissions();
-  submissions.push({
-    imageId,
-    userId,
-    boxes,
-    submittedAt: new Date().toISOString(),
-  });
-  localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
+  // const submissions = getSubmissions();
+  // submissions.push({
+  //   imageId,
+  //   userId,
+  //   boxes,
+  //   submittedAt: new Date().toISOString(),
+  // });
+  // localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
+  let annotations: any[] = [
+    {
+      imageId,
+      userId,
+      boxes,
+      submittedAt: new Date().toISOString(),
+    }
+  ]
+  submitAnnotations(annotations);
+  console.log("submitting")
+  console.log(annotations)
+
 }
 
 /**
@@ -147,3 +161,18 @@ export function getPoolStats() {
     trashed: pool.filter((i) => i.status === "trashed").length,
   };
 }
+
+export const submitAnnotations = async (annotations: any[]) => {
+  try {
+    const res = await api.post('/imager/submit', annotations);
+    return res.data;
+  } catch (error) {
+    console.error("Error saving annotations:", error);
+    throw error;
+  }
+};
+
+export const getRandomTask = async (uuid: string) => {
+  const res = await api.get('/imager/get-task');
+    return res.data;
+};

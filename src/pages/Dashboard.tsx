@@ -19,12 +19,12 @@ import { DEFAULT_CLASSES } from "@/types/annotation";
 import type { BoundingBox } from "@/types/annotation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  assignRandomImage,
   submitImage,
   trashImage,
   seedPool,
   getPoolStats,
   type ImagePoolEntry,
+  getRandomTask,
 } from "@/services/imageService";
 import { getUserTotalCount } from "@/services/statsService";
 
@@ -49,24 +49,40 @@ const Dashboard = () => {
     seedPool(DEMO_IMAGES);
   }, []);
 
-  // Assign an image to the user
-  const loadNextImage = useCallback(() => {
+  const loadNextImage = useCallback(async () => {
     if (!user) return;
-    const img = assignRandomImage(user.uuid);
-    if (img) {
-      setCurrentImage(img);
-      setBoxes([]);
-      setSelectedBoxId(null);
-      setNoImages(false);
-    } else {
-      setCurrentImage(null);
+    
+    try {
+      // const img = await assignRandomImage(user.uuid); 
+      const img = await getRandomTask(user.uuid);
+      console.log("getting next image...")
+      console.log("image found!", img['filename'])
+      
+      if (img) {
+        setCurrentImage(img);
+        setBoxes([]);
+        setSelectedBoxId(null);
+        setNoImages(false);
+      } else {
+        setCurrentImage(null);
+        setNoImages(true);
+      }
+      
+      const count = await getUserTotalCount(user.uuid); 
+      setTotalCount(count);
+
+    } catch (error) {
+      console.error("Error loading image:", error);
       setNoImages(true);
     }
-    setTotalCount(getUserTotalCount(user.uuid));
   }, [user]);
 
   useEffect(() => {
-    loadNextImage();
+    let isMounted = true;
+    if (isMounted) {
+      loadNextImage();
+    }
+    return () => { isMounted = false; };
   }, [loadNextImage]);
 
   // Submit annotations
