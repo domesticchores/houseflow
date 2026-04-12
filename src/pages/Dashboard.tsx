@@ -29,11 +29,6 @@ import {
 import { getUserTotalCount } from "@/services/statsService";
 import swal from 'sweetalert';
 
-// Demo seed images — replace these URLs with your actual image folder/API
-const DEMO_IMAGES = [
-  { url: "https://assets.csh.rit.edu/bnb-email/01-28-00-26-04-2025.jpg", filename: "01-28-00-26-04-2025.jpg" }
-];
-
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentImage, setCurrentImage] = useState<ImagePoolEntry | null>(null);
@@ -44,11 +39,6 @@ const Dashboard = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [trashModalOpen, setTrashModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  // Seed demo images on first load
-  useEffect(() => {
-    seedPool(DEMO_IMAGES);
-  }, []);
 
   const loadNextImage = useCallback(async () => {
     if (!user) return;
@@ -104,11 +94,13 @@ const Dashboard = () => {
   }, [user, currentImage, boxes, loadNextImage]);
 
   // Trash image
-  const handleTrash = useCallback(() => {
+  const handleTrash = useCallback(async () => {
     if (!user || !currentImage) return;
-    trashImage(currentImage.id, user.username);
+    setSubmitting(true);
+    await trashImage(currentImage.id, user.username);
     setTrashModalOpen(false);
-    loadNextImage();
+    await loadNextImage();
+    setSubmitting(false);
   }, [user, currentImage, loadNextImage]);
 
   const handleDeleteBox = useCallback((id: string) => {
@@ -189,7 +181,7 @@ const Dashboard = () => {
         {/* Canvas */}
         <Col md={9} lg={10}>
           {noImages ? (
-            <Alert color="primary" className="mt-2">
+            <Alert color="primary" className="mt-2" fade={true}>
               No images available in the pool. Wow, you've done it!
             </Alert>
           ) : currentImage ? (
@@ -222,7 +214,7 @@ const Dashboard = () => {
           Trash Image
         </ModalHeader>
         <ModalBody>
-          <Alert color="warning" className="mb-0">
+          <Alert color="warning" className="mb-0" fade={true}>
             <strong>Warning:</strong> This will permanently remove this image from the annotation pool.
             Only trash images that are too blurry or unusable. This action cannot be undone.
           </Alert>

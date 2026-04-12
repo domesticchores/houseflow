@@ -129,14 +129,17 @@ export function submitImage(imageId: string, userId: string, boxes: BoundingBox[
 /**
  * Trash an image (remove from pool entirely).
  */
-export function trashImage(imageId: string, userId: string) {
-  const pool = getPool();
-  const img = pool.find((i) => i.id === imageId);
-  if (img) {
-    img.status = "trashed";
-    img.assignedTo = userId;
-    savePool(pool);
-  }
+export const trashImage = async (imageId: string, userId: string) => {
+  // const pool = getPool();
+  // const img = pool.find((i) => i.id === imageId);
+  // if (img) {
+  //   img.status = "trashed";
+  //   img.assignedTo = userId;
+  //   savePool(pool);
+  // }
+  console.log("trashing image ",imageId)
+  const res = await api.post('/imager/trash', {imageId,userId});
+  return res.data;
 }
 
 export function getSubmissions(): SubmittedAnnotation[] {
