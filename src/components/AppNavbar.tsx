@@ -49,15 +49,26 @@ const AppNavbar = () => {
               </NavLink>
             </NavItem>
             {/* admin panel */}
-            {adminUsers.includes(user?.uuid) && <NavItem>
+            {adminUsers.includes(user?.uuid) && <>
+              <NavItem>
+                <NavLink
+                  tag={Link}
+                  to="/admin"
+                  active={location.pathname === "/admin"}
+                >
+                  Admin
+                </NavLink>
+              </NavItem>
+              <NavItem>
               <NavLink
                 tag={Link}
-                to="/admin"
-                active={location.pathname === "/admin"}
+                to="/upload"
+                active={location.pathname === "/upload"}
               >
-                Admin
+                Upload
               </NavLink>
-            </NavItem>}
+            </NavItem>
+            </>}
           </Nav>
           <Nav className="mw-auto" navbar>
             <Profile/>
