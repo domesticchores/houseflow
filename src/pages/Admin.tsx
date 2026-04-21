@@ -120,6 +120,12 @@ const Admin = () => {
 
   if (!user) return null;
 
+  // check if admin
+  const adminUsers: Array<string> = import.meta.env.VITE_ADMIN_USERS ?? ["xxxxxxxx-xxxx-4xxx-axxx-xxxxxxxxxxxx"]
+  if (!adminUsers.includes(user.uuid)) {
+      return <h1>Not Authorized</h1>
+  }
+
   return (
     <Container fluid className="pb-3">
       <Row>
