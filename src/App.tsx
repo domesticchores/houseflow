@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 import "csh-material-bootstrap/dist/csh-material-bootstrap.css";
+import Admin from "./pages/Admin";
 
 const App = () => (
   <AuthProvider>
@@ -14,6 +15,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

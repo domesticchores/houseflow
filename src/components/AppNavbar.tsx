@@ -18,6 +18,9 @@ const AppNavbar = () => {
   const { user } = useAuth();
   const location = useLocation();
 
+  // update env to add new users
+  const adminUsers: Array<string> = import.meta.env.VITE_ADMIN_USERS ?? ["xxxxxxxx-xxxx-4xxx-axxx-xxxxxxxxxxxx"]
+
   return (
     <Navbar color="primary" dark expand="lg" className="justify-space-between">
       <Container className="">
@@ -45,6 +48,16 @@ const AppNavbar = () => {
                 Leaderboard
               </NavLink>
             </NavItem>
+            {/* admin panel */}
+            {adminUsers.includes(user?.uuid) && <NavItem>
+              <NavLink
+                tag={Link}
+                to="/admin"
+                active={location.pathname === "/admin"}
+              >
+                Admin
+              </NavLink>
+            </NavItem>}
           </Nav>
           <Nav className="mw-auto" navbar>
             <Profile/>
