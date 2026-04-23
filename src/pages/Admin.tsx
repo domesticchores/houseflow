@@ -25,6 +25,7 @@ import {
   type ImagePoolEntry,
   approveImage,
   getReviewTask,
+  updateImage,
 } from "@/services/imageService";
 import swal from 'sweetalert';
 
@@ -67,6 +68,7 @@ const Admin = () => {
     setSubmitting(true);
     
     try {
+      await updateImage(currentImage.id, user.uuid, boxes);
       await approveImage(currentImage.id);
       swal("Approved!", "Image added to training set.", "success");
       await loadNextImage();
@@ -118,9 +120,8 @@ const Admin = () => {
 
   const stats = getPoolStats();
 
-  if (!user) return null;
-
   // check if admin
+  if (!user) return null;
   const adminUsers: Array<string> = import.meta.env.VITE_ADMIN_USERS ?? ["xxxxxxxx-xxxx-4xxx-axxx-xxxxxxxxxxxx"]
   if (!adminUsers.includes(user.uuid)) {
       return <h1>Not Authorized</h1>
@@ -161,11 +162,16 @@ const Admin = () => {
                 {submitting ? <Spinner size="sm" /> : "Approve Annotations"}
               </Button>
               <Button
-                color="danger"
-                outline
+                color="warning"
                 onClick={() => setTrashModalOpen(true)}
               >
-                Delete Annotations
+                Reject Annotations
+              </Button>
+              <Button
+                color="danger"
+                onClick={() => setTrashModalOpen(true)}
+              >
+                Trash Image
               </Button>
             </div>
           )}

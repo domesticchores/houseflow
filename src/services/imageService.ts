@@ -61,6 +61,23 @@ export function submitImage(imageId: string, userId: string, boxes: BoundingBox[
 }
 
 /**
+ * Update annotations for an image.
+ */
+export const  updateImage = async (imageId: string, userId: string, boxes: BoundingBox[]) => {
+  let annotations: any[] = [
+    {
+      imageId,
+      userId,
+      boxes,
+      submittedAt: new Date().toISOString(),
+    }
+  ]
+  await updateAnnotations(annotations);
+  console.log("updating")
+  console.log(annotations)
+}
+
+/**
  * Trash an image (remove from pool entirely).
  */
 export const trashImage = async (imageId: string, userId: string) => {
@@ -98,6 +115,16 @@ export const submitAnnotations = async (annotations: any[]) => {
     return res.data;
   } catch (error) {
     console.error("Error saving annotations:", error);
+    throw error;
+  }
+};
+
+export const updateAnnotations = async (annotations: any[]) => {
+  try {
+    const res = await api.post('/imager/update', annotations);
+    return res.data;
+  } catch (error) {
+    console.error("Error updating annotations:", error);
     throw error;
   }
 };
