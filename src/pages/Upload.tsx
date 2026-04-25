@@ -9,7 +9,8 @@ import {
   Progress, 
   Alert, 
   ListGroup, 
-  ListGroupItem 
+  ListGroupItem, 
+  Badge
 } from "reactstrap";
 import api from "@/services/api";
 import { handleUpload } from "@/services/s3Service";
@@ -17,6 +18,7 @@ import { handleUpload } from "@/services/s3Service";
 const Upload = () => {
   const { user } = useAuth();
   const [files, setFiles] = useState([]);
+  const [errorsArr, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState({ type: "", msg: "" });
@@ -38,6 +40,7 @@ const Upload = () => {
     const imageFiles = selectedFiles.filter((file: File) => file.type.startsWith("image/"));
     setFiles(imageFiles);
     setStatus({ type: "info", msg: `${imageFiles.length} images ready to upload.` });
+    setErrors({});
   };
 
   const uploadFiles = async () => {
@@ -47,25 +50,37 @@ const Upload = () => {
     setProgress(0);
     let completed = 0;
     let errors = 0;
+    // array of error messages
+    let tmpErrors = {};
 
     for (const file of files) {
       try {
-        // 1. Get secure URL (passing filename as query param if needed by your backend)
+        // upload through api
         const response = await handleUpload(file);
-        console.log(response)
-
         completed++;
         setProgress(Math.round((completed / files.length) * 100));
       } catch (error) {
-        console.error(`Failed to upload ${file.name}`, error);
+        // console.error(`Failed to upload ${file.name}`, error);
+        // add new error to the list
+        if (error.status == 409) {
+          tmpErrors[file.name] = "File already exists in database 409";
+        } else {
+          tmpErrors[file.name] = error.message;
+        }
         errors++;
       }
     }
 
+    setErrors(tmpErrors);
+
     setUploading(false);
     if (errors > 0) {
+      let mesg = errors+" uploads were unable to be processed:\n";
+      for (const error in errorsArr) {
+        mesg += error+"\n"
+      }
       swal("Error!","Unable to process "+ errors+" Uploads. Contact an admin if this presists!","error");
-      setStatus({ type: "danger", msg: errors+" uploads were unable to be processed!" });
+      setStatus({ type: "danger", msg: mesg });
     } else {
       swal("Success!","All uploads were processed!","success");
       setStatus({ type: "success", msg: "All files processed successfully!" });
@@ -91,15 +106,25 @@ const Upload = () => {
           </div>
 
           {files.length > 0 && (
-            <div className="mb-3">
+            <div className="mb-3 d-flex gap-2 pr-2">
               <Button 
                 color="primary" 
                 onClick={uploadFiles} 
                 disabled={uploading}
                 block
+                className="col-9"
               >
                 {uploading ? "Uploading..." : `Upload ${files.length} Files`}
               </Button>
+              <Button
+                color="danger" 
+                onClick={() => {setFiles([]);setStatus({ type: "", msg: "" })}} 
+                disabled={uploading}
+                block
+                className="col-3"
+                >
+                  Clear Files
+                </Button>
             </div>
           )}
 
@@ -114,10 +139,9 @@ const Upload = () => {
 
           {files.length > 0 && !uploading && (
             <ListGroup className="mt-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-              {files.slice(0, 5).map((f, i) => (
-                <ListGroupItem key={i} className="small">{f.name}</ListGroupItem>
+              {files.map((f, i) => (
+                <ListGroupItem key={i} className="small">{f.name} {errorsArr[f.name] && <Badge color="danger">{errorsArr[f.name]}</Badge>}</ListGroupItem>
               ))}
-              {files.length > 5 && <ListGroupItem color="light">...and {files.length - 5} more</ListGroupItem>}
             </ListGroup>
           )}
         </CardBody>

@@ -9,5 +9,5 @@ export const handleUpload = async (file: File) => {
   form.append('file',file);
   form.append('filename',file.name);
   const resp = await api.post('/imager/get-upload-link',form, {headers: { "Content-Type": "multipart/form-data" }});
-  return resp.status
+  return resp.statusText
 };
