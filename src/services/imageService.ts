@@ -43,75 +43,10 @@ export function getPool(): ImagePoolEntry[] {
   }
 }
 
-function savePool(pool: ImagePoolEntry[]) {
-  localStorage.setItem(POOL_KEY, JSON.stringify(pool));
-}
-
-/**
- * Seed the pool with image URLs.
- * Call this once or from an admin panel.
- * In production, images would be loaded from a folder/bucket via API.
- */
-export function seedPool(images: { url: string; filename: string }[]) {
-  const existing = getPool();
-  const existingUrls = new Set(existing.map((e) => e.url));
-  const newEntries: ImagePoolEntry[] = images
-    .filter((img) => !existingUrls.has(img.url))
-    .map((img) => ({
-      id: crypto.randomUUID(),
-      url: img.url,
-      filename: img.filename,
-      assignedTo: null,
-      status: "available" as const,
-    }));
-  savePool([...existing, ...newEntries]);
-  return newEntries.length;
-}
-
-/**
- * Get a random available image and assign it to a user.
- * Returns null if no images are available.
- */
-// export function assignRandomImage(userId: string): ImagePoolEntry | null {
-//   const pool = getPool();
-
-//   // Check if user already has an assigned image
-//   const alreadyAssigned = pool.find(
-//     (img) => img.assignedTo === userId && img.status === "assigned"
-//   );
-//   if (alreadyAssigned) return alreadyAssigned;
-
-//   // Pick random from available
-//   const available = pool.filter((img) => img.status === "available");
-//   if (available.length === 0) return null;
-
-//   const picked = available[Math.floor(Math.random() * available.length)];
-//   picked.assignedTo = userId;
-//   picked.status = "assigned";
-//   savePool(pool);
-//   return picked;
-// }
-
 /**
  * Submit annotations for an image.
  */
 export function submitImage(imageId: string, userId: string, boxes: BoundingBox[]) {
-  // const pool = getPool();
-  // const img = pool.find((i) => i.id === imageId);
-  // if (img) {
-  //   img.status = "submitted";
-  //   savePool(pool);
-  // }
-
-  // Save submission
-  // const submissions = getSubmissions();
-  // submissions.push({
-  //   imageId,
-  //   userId,
-  //   boxes,
-  //   submittedAt: new Date().toISOString(),
-  // });
-  // localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
   let annotations: any[] = [
     {
       imageId,
@@ -123,20 +58,29 @@ export function submitImage(imageId: string, userId: string, boxes: BoundingBox[
   submitAnnotations(annotations);
   console.log("submitting")
   console.log(annotations)
+}
 
+/**
+ * Update annotations for an image.
+ */
+export const  updateImage = async (imageId: string, userId: string, boxes: BoundingBox[]) => {
+  let annotations: any[] = [
+    {
+      imageId,
+      userId,
+      boxes,
+      submittedAt: new Date().toISOString(),
+    }
+  ]
+  await updateAnnotations(annotations);
+  console.log("updating")
+  console.log(annotations)
 }
 
 /**
  * Trash an image (remove from pool entirely).
  */
 export const trashImage = async (imageId: string, userId: string) => {
-  // const pool = getPool();
-  // const img = pool.find((i) => i.id === imageId);
-  // if (img) {
-  //   img.status = "trashed";
-  //   img.assignedTo = userId;
-  //   savePool(pool);
-  // }
   console.log("trashing image ",imageId)
   const res = await api.post('/imager/trash', {imageId,userId});
   return res.data;
@@ -175,7 +119,26 @@ export const submitAnnotations = async (annotations: any[]) => {
   }
 };
 
+export const updateAnnotations = async (annotations: any[]) => {
+  try {
+    const res = await api.post('/imager/update', annotations);
+    return res.data;
+  } catch (error) {
+    console.error("Error updating annotations:", error);
+    throw error;
+  }
+};
+
 export const getRandomTask = async (uuid: string) => {
   const res = await api.get('/imager/get-task?uuid='+uuid);
     return res.data;
+};
+
+export const getReviewTask = async () => {
+  const { data } = await api.get('/imager/get-submission');
+  return data;
+};
+
+export const approveImage = async (imageId: string) => {
+  return await api.post(`/imager/approve/${imageId}`);
 };

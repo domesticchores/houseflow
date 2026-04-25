@@ -10,7 +10,7 @@ interface ClassSelectorProps {
 const ClassSelectorBootstrap = ({ classes, activeClassId, onSelectClass }: ClassSelectorProps) => {
   return (
     <div className="mb-2">
-      <small className="text-muted d-block mb-1">Class</small>
+      <small className="text-muted d-block mb-1">Labels:</small>
       <ButtonGroup size="sm" vertical className="w-100">
         {classes.map((cls) => (
           <Button

@@ -23,12 +23,13 @@ import {
   trashImage,
   getPoolStats,
   type ImagePoolEntry,
-  getRandomTask,
+  approveImage,
+  getReviewTask,
+  updateImage,
 } from "@/services/imageService";
-import { getUserTotalCount } from "@/services/statsService";
 import swal from 'sweetalert';
 
-const Dashboard = () => {
+const Admin = () => {
   const { user } = useAuth();
   const [currentImage, setCurrentImage] = useState<ImagePoolEntry | null>(null);
   const [boxes, setBoxes] = useState<BoundingBox[]>([]);
@@ -38,34 +39,45 @@ const Dashboard = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [trashModalOpen, setTrashModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted_by, setSubmittedBy] = useState<string | null>(null);
 
   const loadNextImage = useCallback(async () => {
     if (!user) return;
     
     try {
-      // const img = await assignRandomImage(user.uuid); 
-      const img = await getRandomTask(user.uuid);
-      console.log("getting next image...")
-      console.log("image found!", img['filename'])
+      const data = await getReviewTask();
       
-      if (img) {
-        setCurrentImage(img);
-        setBoxes([]);
+      if (data) {
+        setCurrentImage(data);
+        setBoxes(data.boxes || []);
+        setSubmittedBy(data.submitted_by || "???")
         setSelectedBoxId(null);
         setNoImages(false);
       } else {
         setCurrentImage(null);
         setNoImages(true);
       }
-      
-      const count = await getUserTotalCount(user.uuid); 
-      setTotalCount(count);
-
     } catch (error) {
-      console.error("Error loading image:", error);
+      console.error("Error loading review task:", error);
       setNoImages(true);
     }
   }, [user]);
+
+  const handleApprove = useCallback(async () => {
+    if (!user || !currentImage) return;
+    setSubmitting(true);
+    
+    try {
+      await updateImage(currentImage.id, user.uuid, boxes);
+      await approveImage(currentImage.id);
+      swal("Approved!", "Image added to training set.", "success");
+      await loadNextImage();
+    } catch (error) {
+      swal("Error", "Failed to approve image", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [user, currentImage, boxes, loadNextImage]);
 
   useEffect(() => {
     let isMounted = true;
@@ -74,28 +86,6 @@ const Dashboard = () => {
     }
     return () => { isMounted = false; };
   }, [loadNextImage]);
-
-  // Submit annotations
-  const handleSubmit = useCallback(async () => {
-    if (!user || !currentImage) return;
-    setSubmitting(true);
-    submitImage(currentImage.id, user.uuid, boxes);
-    // add modal when submitted!
-    try {
-      await swal({
-        title: "Submitted!",
-        text: "Thanks for helping out :)",
-        icon: "success"
-      });
-      await loadNextImage();
-
-    } catch (error) {
-      console.error("Submission failed:", error);
-      swal("Error", "Could not save annotations. If this persists contact @ak.", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  }, [user, currentImage, boxes, loadNextImage]);
 
   // Trash image
   const handleTrash = useCallback(async () => {
@@ -130,20 +120,20 @@ const Dashboard = () => {
 
   const stats = getPoolStats();
 
+  // check if admin
   if (!user) return null;
+  const adminUsers: Array<string> = import.meta.env.VITE_ADMIN_USERS ?? ["xxxxxxxx-xxxx-4xxx-axxx-xxxxxxxxxxxx"]
+  if (!adminUsers.includes(user.uuid)) {
+      return <h1>Not Authorized</h1>
+  }
 
   return (
     <Container fluid className="pb-3">
       <Row>
         {/* Sidebar */}
         <Col md={3} lg={2}>
-          <div className="my-3">
-            <small className="text-muted">Your total: </small>
-            <Badge color="primary">{totalCount}</Badge>
-          </div>
-          <div className="my-3">
-            <small className="text-muted">Available: </small>
-            <Badge color="primary">{totalCount}</Badge>
+          <div className="mt-3 mb-1">
+            <small className="text-muted">You can modify annotations before approving the submission.</small>
           </div>
 
           <ClassSelectorBootstrap
@@ -166,32 +156,37 @@ const Dashboard = () => {
             <div className="mt-3 d-grid gap-2">
               <Button
                 color="success"
-                onClick={handleSubmit}
+                onClick={handleApprove}
                 disabled={submitting || boxes.length === 0}
               >
-                {submitting ? <Spinner size="sm" /> : "Submit Annotations"}
+                {submitting ? <Spinner size="sm" /> : "Approve Annotations"}
+              </Button>
+              <Button
+                color="warning"
+                onClick={() => setTrashModalOpen(true)}
+              >
+                Reject Annotations
               </Button>
               <Button
                 color="danger"
-                outline
                 onClick={() => setTrashModalOpen(true)}
               >
-                Remove Image
+                Trash Image
               </Button>
             </div>
           )}
         </Col>
 
         {/* Canvas */}
-        <Col md={9} lg={10}>
+        <Col md={9} lg={8}>
           {noImages ? (
             <Alert color="primary" className="mt-2" fade={true}>
-              No images available in the pool. Wow, you've done it!
+              No images available to review.
             </Alert>
           ) : currentImage ? (
             <div style={{ height: "calc(100vh - 120px)" }}>
-              <div className="mb-1">
-                <small className="text-muted font-monospace">{currentImage.filename}</small>
+              <div className="my-1 w-full d-flex">
+                <small className="mx-auto">REVIEW MODE</small>
               </div>
               {!submitting && <AnnotationCanvas
                 imageSrc={currentImage.url}
@@ -209,6 +204,17 @@ const Dashboard = () => {
               <p className="text-muted mt-2">Loading image...</p>
             </div>
           )}
+        </Col>
+
+        {/* Sidebar */}
+        <Col md={3} lg={2}>
+          <div className="mt-4 mb-1">
+            <h4 className="text-muted">Metadata</h4>
+            <hr></hr>
+            <p>Annotations from user:</p>
+            <p><strong>{submitted_by}</strong></p>
+            <p></p>
+          </div>
         </Col>
       </Row>
 
@@ -236,4 +242,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Admin;
