@@ -8,13 +8,15 @@ import NotFound from "./pages/NotFound";
 import "csh-material-bootstrap/dist/csh-material-bootstrap.css";
 import Admin from "./pages/Admin";
 import Upload from "./pages/Upload";
+import Home from "./pages/Home";
 
 const App = () => (
   <AuthProvider>
     <BrowserRouter>
       <AppNavbar />
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/upload" element={<Upload />} />

@@ -25,7 +25,7 @@ const AppNavbar = () => {
     <Navbar color="primary" dark expand="lg" className="justify-space-between">
       <Container className="">
         <NavbarBrand tag={Link} to="/">
-          Bits 'n Bytes Imager
+          Houseflow
         </NavbarBrand>
         <NavbarToggler onClick={() => setIsOpen(!isOpen)} />
         <Collapse isOpen={isOpen} navbar className="justify-content-between">

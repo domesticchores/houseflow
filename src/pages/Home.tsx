@@ -1,16 +1,17 @@
 import {
   useOidcFetch,
-  // useOidc,
-  // useOidcAccessToken,
-  // useOidcIdToken,
 } from "@axa-fr/react-oidc";
 import {useEffect, useState} from "react";
 import {apiPrefix} from "../configuration";
-// import {Link} from "react-router-dom";
-// import Authenticating from "../callbacks/Authenticating";
-// import AuthenticationError from "../callbacks/AuthenticationError";
-// import SessionLost from "../callbacks/SessionLost";
-// import UserInfo from "../UserInfo";
+import { Button, Card, CardBody, CardSubtitle, CardText, CardTitle, Container } from "reactstrap";
+import { Link } from "react-router-dom";
+
+interface PoolItem {
+  name: string,
+  desc: string,
+  s3pool: string,
+  createdby: string
+}
 
 const Home = () => {
   // important hooks
@@ -18,7 +19,6 @@ const Home = () => {
   // const {login, logout, isAuthenticated} = useOidc(); // this gets the functions to login and logout and the logout state
   // const {accessTokenPayload} = useOidcAccessToken(); // this contains the user info in raw json format
   // const userInfo = accessTokenPayload as UserInfo;
-
   const {fetch} = useOidcFetch();
 
   const [data, setData] = useState<string | null>(null);
@@ -39,14 +39,45 @@ const Home = () => {
     };
   }, [fetch]);
 
+  const testPoolItem: PoolItem = {
+    name: "test pool",
+    desc: "rah rah rah",
+    createdby: "ak",
+    s3pool: "bnb-model",
+  }
+
+  const [pools, setPools] = useState<PoolItem[]>([testPoolItem]);
+
   return (
-    <div>
-      <h1 className="display-3">Hello World!</h1>
+    <div className="flex text-center">
+      <h1 className="display-3">Welcome!</h1>
       <p className="lead">
-        Check out <code>src/pages/Home.tsx</code> to see how you can get
-        started.
+        Current avalible pools:
       </p>
-      {data !== null && <p>Your data was: {data}</p>}
+      {!pools && <p>no pools found</p>}
+      {pools && <Container>
+        {pools.map((pool) => {
+          return <Card>
+              <CardBody>
+                <CardTitle tag="h5">
+                  {pool.name}
+                </CardTitle>
+                <CardSubtitle
+                  className="mb-2 text-muted"
+                  tag="h6"
+                >
+                  {"created by "+pool.createdby}
+                </CardSubtitle>
+                <CardText>
+                  {pool.desc}
+                </CardText>
+                <Button>
+                  <Link to="/dashboard">Enter</Link>
+                </Button>
+              </CardBody>
+          </Card>
+        })}
+      </Container>}
     </div>
   );
 };
